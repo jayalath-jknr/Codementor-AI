@@ -1,5 +1,5 @@
 import streamlit as st
-from services.codestral_integration import CodestralIntegration
+from services.watson_integration import WatsonIntegration
 from streamlit_ace import st_ace
 
 questions = [
@@ -10,7 +10,7 @@ questions = [
 
 def show():
     st.title("C++ Coding Questions")
-    codestral = CodestralIntegration()
+    watson_integration = WatsonIntegration()
     
     for i, q in enumerate(questions):
         st.subheader(f"Question {i+1}")
@@ -26,28 +26,21 @@ def show():
         
         if st.button(f"Evaluate Question {i+1}", key=f"eval_{i}"):
             if user_code:
-                review_comments = codestral.review_code(user_code)
+                review_comments = watson_integration.review_code(user_code)
                 st.subheader("AI Feedback")
                 st.write(review_comments)
 
-                output, success = codestral.execute_code(user_code)
-                if success:
-                    normalized_output = output.strip()
-                    normalized_expected_output = q["expected_output"].strip()
-                    if normalized_output == normalized_expected_output:
-                        st.success(f"Correct! Output: {output}")
-                        st.markdown("### Marks: 10/10")
-                    else:
-                        st.error(f"Incorrect. \nExpected: {q['expected_output']}\nGot: {output}")
-                        st.write("Raw Outputs for Debugging:")
-                        st.text(f"Expected: {repr(q['expected_output'])}")
-                        st.text(f"Got: {repr(output)}")
-                        st.markdown("### Marks: 5/10")  # Adjust scoring logic as needed
+                output = watson_integration.generate_code(user_code)
+                normalized_output = output.strip()
+                normalized_expected_output = q["expected_output"].strip()
+                if normalized_output == normalized_expected_output:
+                    st.success(f"Correct! Output: {output}")
+                    st.markdown("### Marks: 10/10")
                 else:
-                    st.error(f"Error in code execution: {output}")
-                    correction_suggestion = codestral.correct_code(output)
-                    with st.expander("Correction Suggestion"):
-                        st.write(correction_suggestion)
-                    st.markdown("### Marks: 0/10")
+                    st.error(f"Incorrect. \nExpected: {q['expected_output']}\nGot: {output}")
+                    st.write("Raw Outputs for Debugging:")
+                    st.text(f"Expected: {repr(q['expected_output'])}")
+                    st.text(f"Got: {repr(output)}")
+                    st.markdown("### Marks: 5/10")  # Adjust scoring logic as needed
             else:
                 st.error("Please enter your code before evaluation.")
